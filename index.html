@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guess the Song</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Guess the Song</h1>
+  <nav>
+    <button id="modeDaily" class="tab">Daily</button>
+    <button id="modeUnl" class="tab">Unlimited</button>
+    <button id="statsBtn" class="tab" aria-label="Statistics">Stats</button>
+  </nav>
+</header>
+
+<main>
+  <p id="status" aria-live="polite"></p>
+  <div id="scorebar"></div>
+  <div id="segments" aria-label="Attempts"></div>
+  <div id="progress"><div id="bar"></div></div>
+
+  <section id="game">
+    <div class="row">
+      <button id="play" class="primary">Play</button>
+      <button id="skip">Skip</button>
+    </div>
+    <div class="guess">
+      <input id="input" type="text" placeholder="Search title, artist or pinyin…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="list">
+      <ul id="list" role="listbox" hidden></ul>
+    </div>
+    <button id="submit" class="primary wide">Submit guess</button>
+    <label class="vol">Volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8"></label>
+  </section>
+
+  <section id="end" hidden>
+    <h2 id="endTitle"></h2>
+    <p id="endPts" class="pts"></p>
+    <p class="answer"><strong id="endSong"></strong><br><span id="endArtist"></span></p>
+    <button id="full" class="wide">Play full song</button>
+    <button id="next" class="primary wide">Next song</button>
+  </section>
+
+  <section id="final" hidden>
+    <h2>Round complete</h2>
+    <p id="finalScore" class="pts"></p>
+    <p id="finalBest" class="muted"></p>
+    <ul id="finalList"></ul>
+    <div class="row">
+      <button id="share">Share result</button>
+      <button id="again" class="primary">Play again</button>
+    </div>
+    <p id="finalNote" class="muted"></p>
+  </section>
+</main>
+
+<dialog id="statsDlg"><div id="statsBody"></div><button id="closeStats" class="wide">Close</button></dialog>
+<div id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
