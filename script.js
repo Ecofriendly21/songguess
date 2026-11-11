@@ -38,7 +38,7 @@ function countUp(el, to, fmtFn, ms = 900) {       // ease-out number count-up
   })(t0);
 }
 function burst() {                                  // confetti: pieces fall and remove themselves
-  const colors = ['#ffb020', '#ff5d73', '#3ee6a8', '#ff2e88', '#00c2b8', '#f5efe6'];
+  const colors = ['#6d83ff', '#a35cff', '#3ee6a8', '#4cc9f0', '#c084fc', '#f5efe6'];
   for (let i = 0; i < 46; i++) {
     const c = document.createElement('i'); c.className = 'conf';
     c.style.cssText = `left:${Math.random() * 100}vw;background:${colors[i % colors.length]};--dx:${(Math.random() - .5) * 240}px;` +
@@ -138,9 +138,9 @@ const preload = song => loadBuffer(song).catch(() => getEl(song));
 
 /* ---------- State ---------- */
 const SONGS_PER_ROUND = 5;                     // one "round" = this many songs
-// Points for a correct guess on attempt 1..6. Skips and wrong guesses both use up an attempt, so the
-// longer the clip you needed, the fewer points. A miss scores 0. Keep this the same length as CLIPS.
-const SCORES = [10000, 8000, 6000, 4000, 2000, 1000];
+// Scoring: every song starts at START_PTS. Skipping to a longer clip costs SKIP_COST, a wrong guess
+// costs WRONG_COST (and does NOT reveal more audio). Reaching 0 points, or giving up, scores 0.
+const START_PTS = 10000, SKIP_COST = 1000, WRONG_COST = 500;
 const fmt = n => n.toLocaleString('en-US');
 let songs = [], mode = 'daily', round = null, game = null, selected = null, bag = [];
 const statsKey = m => 'songless.stats.' + m;
@@ -157,8 +157,9 @@ function seededShuffle(arr, seed) {            // mulberry32: same seed -> same 
 // game = one round of N songs; round = the song currently being guessed
 function startRound(saved) {
   const idx = game.order[game.pos], song = songs[idx];
-  round = { idx, song, res: saved?.res || [], over: !!saved?.over, won: !!saved?.won };
+  round = { idx, song, skips: saved?.skips || 0, wrongs: saved?.wrongs || [], over: !!saved?.over, won: !!saved?.won };
   selected = null; $('input').value = '';
+  $('stage').classList.remove('win', 'lose');
   preload(song);                                // preload so the 0.5s clip plays instantly
   const nxt = game.order[game.pos + 1]; if (nxt !== undefined) preload(songs[nxt]);
   render();
@@ -177,25 +178,26 @@ function newGame() {
 function setMode(m) {
   stopAudio(); mode = m; store.set('songless.mode', m);
   const sv = m === 'daily' ? store.get('songless.daily', null) : null;
-  if (sv && sv.day === dayNumber() && Array.isArray(sv.order) && sv.order.every(i => songs[i])) {
+  if (sv && sv.day === dayNumber() && sv.v === 2 && Array.isArray(sv.order) && sv.order.every(i => songs[i])) {
     game = { order: sv.order, pos: sv.pos, rows: sv.rows, scores: sv.scores, complete: sv.complete, viewFinal: sv.complete, newBest: false };
     startRound(sv);                             // restore today's progress
   } else newGame();
 }
 function persist() {
-  if (mode === 'daily') store.set('songless.daily', { day: dayNumber(), order: game.order, pos: game.pos,
-    rows: game.rows, scores: game.scores, complete: game.complete, res: round.res, over: round.over, won: round.won });
+  if (mode === 'daily') store.set('songless.daily', { v: 2, day: dayNumber(), order: game.order, pos: game.pos,
+    rows: game.rows, scores: game.scores, complete: game.complete, skips: round.skips, wrongs: round.wrongs, over: round.over, won: round.won });
 }
 
 /* ---------- Gameplay ---------- */
+const worth = r => Math.max(0, START_PTS - SKIP_COST * r.skips - WRONG_COST * r.wrongs.length);
 function finish(won) {
-  round.over = true; round.won = won; stopAudio();
-  game.rows.push(round.res.slice());
-  game.scores.push(won ? SCORES[Math.min(round.res.length, SCORES.length) - 1] : 0);
-  const k = statsKey(mode);                     // per-song stats
+  round.over = true; round.won = won;
+  game.rows.push({ skips: round.skips, wrongs: round.wrongs.length, won });
+  game.scores.push(won ? worth(round) : 0);
+  const k = statsKey(mode);                     // per-song stats (distribution = which clip length solved it)
   const s = store.get(k, { played: 0, wins: 0, streak: 0, max: 0, dist: Array(MAX).fill(0) });
   s.played++;
-  if (won) { s.wins++; s.streak++; s.max = Math.max(s.max, s.streak); s.dist[round.res.length - 1]++; }
+  if (won) { s.wins++; s.streak++; s.max = Math.max(s.max, s.streak); s.dist[round.skips]++; }
   else s.streak = 0;
   store.set(k, s);
   if (game.pos === game.order.length - 1) {     // last song: round complete, update high score now
@@ -204,35 +206,47 @@ function finish(won) {
     if (game.newBest) store.set(highKey(mode), total());
   }
   persist(); render();
+  playSong(round.song);                         // reveal: play the whole song automatically
+}
+// Slide the current content out, run fn (which changes state), slide the new content in.
+let swapping = false;
+async function swap(fn) {
+  if (swapping) return; swapping = true;
+  const m = document.querySelector('main');
+  m.classList.add('leaving'); await new Promise(r => setTimeout(r, 300));
+  fn();
+  m.classList.remove('leaving', 'entering'); void m.offsetWidth; m.classList.add('entering');
+  swapping = false;                             // content has changed; the entrance animation just finishes on its own
+  setTimeout(() => m.classList.remove('entering'), 900);
 }
 function nextSong() {
   stopAudio();
-  if (game.complete) { game.viewFinal = true; render(); return; }
-  game.pos++; startRound(); persist();
+  if (game.complete) swap(() => { game.viewFinal = true; render(); });
+  else swap(() => { game.pos++; startRound(); persist(); });
 }
 function submit() {
   if (round.over) return;
   if (selected === null) return toast('Pick a song from the list first.');
-  const ok = selected === round.idx;
-  round.res.push(ok ? 'correct' : 'wrong');
-  if (!ok) pulse($('guessbox'), 'shake');
-  selected = null; $('input').value = '';
-  if (ok) return finish(true);
-  if (round.res.length >= MAX) return finish(false);
-  persist(); render(); pulse($('stage'), 'pop'); playClip();
+  const pick = selected; selected = null; $('input').value = '';
+  if (round.wrongs.includes(pick)) return toast('You already tried that one.');
+  if (pick === round.idx) return finish(true);
+  round.wrongs.push(pick);                      // wrong guess: costs points, clip length stays the same
+  pulse($('guessbox'), 'shake');
+  if (worth(round) <= 0) return finish(false);
+  persist(); render();
 }
 function skip() {
   if (round.over) return;
-  round.res.push('skip');
-  if (round.res.length >= MAX) return finish(false);
+  if (round.skips >= MAX - 1) return finish(false);       // already on the longest clip = "Give up"
+  round.skips++;
   persist(); render(); pulse($('stage'), 'pop'); playClip();
 }
-const playClip = () => playSong(round.song, CLIPS[Math.min(round.res.length, MAX - 1)]);
+const playClip = () => playSong(round.song, CLIPS[round.skips]);
 
 /* ---------- Rendering ---------- */
 function render() {
-  const n = round.res.length, over = round.over, fin = game.viewFinal;
-  const best = store.get(highKey(mode), 0), maxPts = SCORES[0] * game.order.length;
+  const n = round.skips, over = round.over, fin = game.viewFinal;
+  const best = store.get(highKey(mode), 0), maxPts = START_PTS * game.order.length;
   $('modeDaily').classList.toggle('on', mode === 'daily');
   $('modeUnl').classList.toggle('on', mode === 'unlimited');
   $('game').hidden = over; $('end').hidden = !over || fin; $('final').hidden = !fin;
@@ -242,9 +256,17 @@ function render() {
   $('bestNow').textContent = fmt(best);
   if ($('segments').children.length !== MAX) $('segments').innerHTML = CLIPS.map(c => `<div class="seg">${c}s</div>`).join('');
   [...$('segments').children].forEach((el, i) => {   // update in place so only changed segments animate
-    const cls = ('seg ' + (round.res[i] || (i === n && !over ? 'cur' : ''))).trim();
+    const st = i < n ? 'skip' : i === n ? (over ? (round.won ? 'correct' : 'wrong') : 'cur') : '';
+    const cls = ('seg ' + st).trim();
     if (el.className !== cls) el.className = cls;
   });
+  const w = $('wrongs');                        // wrong-guess chips: only new ones are appended, so only they animate
+  if (w.children.length > round.wrongs.length) w.innerHTML = '';
+  while (w.children.length < round.wrongs.length) {
+    const c = document.createElement('span'); c.className = 'wchip';
+    c.textContent = `${songs[round.wrongs[w.children.length]].title}  −${fmt(WRONG_COST)}`; w.appendChild(c);
+  }
+  $('end').classList.toggle('won', over && round.won); $('end').classList.toggle('lost', over && !round.won);
   if (fin) {
     $('status').textContent = mode === 'daily' ? `Daily #${dayNumber() + 1}` : 'Unlimited';
     if (!game.counted) { game.counted = true; countUp($('finalScore'), total(), v => `${fmt(v)} / ${fmt(maxPts)}`, 1400); }
@@ -257,21 +279,25 @@ function render() {
     $('finalNote').textContent = mode === 'daily' ? 'Come back tomorrow for a new round.' : '';
   } else if (over) {
     $('status').textContent = `Song ${game.pos + 1} of ${game.order.length}`;
-    $('endTitle').textContent = round.won ? `Got it in ${n}!` : 'Missed it';
-    if (!round.counted) { round.counted = true; countUp($('endPts'), game.scores[game.pos], v => '+' + fmt(v)); if (round.won) burst(); }
-    else $('endPts').textContent = '+' + fmt(game.scores[game.pos]);
+    $('endTitle').textContent = round.won ? 'Got it!' : 'Missed it';
+    if (!round.counted) {                       // first render of this reveal: play the animations once
+      round.counted = true;
+      countUp($('endPts'), game.scores[game.pos], v => '+' + fmt(v));
+      $('stage').classList.add(round.won ? 'win' : 'lose'); pulse($('stage'), 'pop');
+      if (round.won) burst();
+    } else $('endPts').textContent = '+' + fmt(game.scores[game.pos]);
     $('endSong').textContent = round.song.title; $('endArtist').textContent = round.song.artist;
     $('next').textContent = game.complete ? 'See results' : 'Next song';
   } else {
-    $('status').textContent = `Song ${game.pos + 1} of ${game.order.length} · Attempt ${n + 1} of ${MAX} · worth ${fmt(SCORES[n])}`;
+    $('status').textContent = `Song ${game.pos + 1} of ${game.order.length} · ${CLIPS[n]}s clip · worth ${fmt(worth(round))}`;
     $('play').textContent = `Play ${CLIPS[n]}s`;
-    $('skip').textContent = n < MAX - 1 ? `Skip (+${CLIPS[n + 1] - CLIPS[n]}s)` : 'Give up';
+    $('skip').textContent = n < MAX - 1 ? 'Skip' : 'Give up';
   }
 }
-function shareText() {                          // spoiler-free: score + one emoji row per song
+function shareText() {                          // spoiler-free: score + one row per song (clip steps, ❌ per wrong guess)
   const rows = game.rows.map(r => Array.from({ length: MAX }, (_, i) =>
-    ({ correct: '🟩', wrong: '🟥', skip: '⬜' }[r[i]] || '⬛')).join('')).join('\n');
-  return `Songless ${mode === 'daily' ? '#' + (dayNumber() + 1) : '∞'} ${fmt(total())}/${fmt(SCORES[0] * game.order.length)}\n${rows}`;
+    i < r.skips ? '⬜' : i === r.skips ? (r.won ? '🟩' : '🟥') : '⬛').join('') + (r.wrongs ? ' ' + '❌'.repeat(Math.min(r.wrongs, 5)) : '')).join('\n');
+  return `Songless ${mode === 'daily' ? '#' + (dayNumber() + 1) : '∞'} ${fmt(total())}/${fmt(START_PTS * game.order.length)}\n${rows}`;
 }
 function statsHTML(m) {
   const s = store.get(statsKey(m), { played: 0, wins: 0, streak: 0, max: 0, dist: Array(MAX).fill(0) });
@@ -326,11 +352,10 @@ function moveHl(d) {
 function bind() {
   $('play').onclick = playClip;
   $('skip').onclick = skip;
-  $('record').onclick = () => (round.over ? $('full').click() : playClip());
+  $('record').onclick = () => (round.over ? (source || el ? stopAudio() : playSong(round.song)) : playClip());
   $('submit').onclick = submit;
   $('next').onclick = nextSong;
-  $('again').onclick = () => { stopAudio(); newGame(); };
-  $('full').onclick = () => (source ? stopAudio() : playSong(round.song));
+  $('again').onclick = () => { stopAudio(); swap(newGame); };
   $('modeDaily').onclick = () => setMode('daily');
   $('modeUnl').onclick = () => setMode('unlimited');
   $('share').onclick = async () => {

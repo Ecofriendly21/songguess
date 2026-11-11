@@ -1,8 +1,8 @@
 :root{
-  --bg:#090e17; --ink:#f5efe6; --muted:#8d97ab; --amber:#ffb020; --coral:#ff5d73; --mint:#3ee6a8;
+  --bg:#080a18; --ink:#f5efe6; --muted:#8d97ab; --blue:#6d83ff; --violet:#a35cff; --red:#ff5d7a; --mint:#3ee6a8;
   --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
   /* aliases so builder.html keeps working */
-  --surface:#121a28; --text:var(--ink); --accent:var(--amber); --bad:var(--coral); --ok:var(--mint); --skip:#5b6578;
+  --surface:#11152b; --text:var(--ink); --accent:var(--blue); --bad:var(--red); --ok:var(--mint); --skip:#5b6578;
   --display:"Unbounded","DM Sans",system-ui,sans-serif;
   font-family:"DM Sans","Segoe UI",system-ui,sans-serif;
 }
@@ -13,9 +13,9 @@ body{min-height:100dvh;display:flex;flex-direction:column;align-items:center;pad
 /* Animated background: three drifting colour blobs that brighten while a clip plays */
 .aurora{position:fixed;inset:0;overflow:hidden;z-index:-1}
 .aurora i{position:absolute;width:55vmax;height:55vmax;border-radius:50%;filter:blur(90px);opacity:.28;transition:opacity 1s;animation:drift 22s ease-in-out infinite alternate}
-.aurora i:nth-child(1){background:#ff9f1c;left:-15vmax;top:-20vmax}
-.aurora i:nth-child(2){background:#ff2e88;right:-20vmax;top:10vmax;animation-duration:28s;animation-delay:-8s}
-.aurora i:nth-child(3){background:#00b8a9;left:10vmax;bottom:-30vmax;animation-duration:34s;animation-delay:-15s}
+.aurora i:nth-child(1){background:#3b5bff;left:-15vmax;top:-20vmax}
+.aurora i:nth-child(2){background:#9b4dff;right:-20vmax;top:10vmax;animation-duration:28s;animation-delay:-8s}
+.aurora i:nth-child(3){background:#22a7f0;left:10vmax;bottom:-30vmax;animation-duration:34s;animation-delay:-15s}
 body:has(#stage.playing) .aurora i{opacity:.5}
 @keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -26,7 +26,7 @@ body:has(#stage.playing) .aurora i{opacity:.5}
 
 header{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;padding:18px 0}
 .logo{display:flex;align-items:center;gap:10px}
-.logo .dot{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,var(--amber) 0 22%,#0b0f16 25%);box-shadow:0 0 0 2px #26303f,0 0 18px rgba(255,176,32,.4);animation:spin 6s linear infinite}
+.logo .dot{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,var(--blue) 0 22%,#0b0f16 25%);box-shadow:0 0 0 2px #26303f,0 0 18px rgba(109,131,255,.4);animation:spin 6s linear infinite}
 h1{font:800 1.05rem var(--display);margin:0;letter-spacing:-.01em}
 nav{display:flex;gap:4px;padding:4px;background:var(--glass);border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(10px)}
 main{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
@@ -34,14 +34,14 @@ main{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
 button{font:600 1rem "DM Sans",system-ui,sans-serif;color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:14px;min-height:50px;padding:0 20px;cursor:pointer;touch-action:manipulation;transition:transform .15s,box-shadow .2s,border-color .2s,background .2s}
 button:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
 button:active{transform:scale(.97)}
-button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 button:disabled{opacity:.45;cursor:not-allowed}
-button.primary{background:linear-gradient(135deg,var(--amber),var(--coral));color:#1b0d00;border:0;box-shadow:0 8px 24px rgba(255,120,60,.32)}
-button.primary:hover{box-shadow:0 12px 32px rgba(255,120,60,.5)}
+button.primary{background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;border:0;box-shadow:0 8px 24px rgba(139,92,255,.32)}
+button.primary:hover{box-shadow:0 12px 32px rgba(139,92,255,.5)}
 button.wide{width:100%}
 .tab{min-height:36px;padding:0 14px;font-size:.85rem;border:0;border-radius:999px;background:none;color:var(--muted)}
 .tab:hover{transform:none;color:var(--ink)}
-.tab.on{background:linear-gradient(135deg,var(--amber),var(--coral));color:#1b0d00}
+.tab.on{background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff}
 .row{display:flex;gap:10px}.row>button{flex:1}
 
 #scorebar{display:flex;justify-content:space-between}
@@ -57,15 +57,15 @@ button.wide{width:100%}
 .ring{position:absolute;left:-14px;top:-14px;width:calc(100% + 28px);height:calc(100% + 28px);transform:rotate(-90deg);overflow:visible}
 .ring circle{fill:none;stroke-width:2.5}
 .ring .track{stroke:var(--line)}
-#ring{stroke:var(--amber);stroke-linecap:round;stroke-dasharray:351.86;stroke-dashoffset:351.86;filter:drop-shadow(0 0 5px var(--amber))}
+#ring{stroke:var(--blue);stroke-linecap:round;stroke-dasharray:351.86;stroke-dashoffset:351.86;filter:drop-shadow(0 0 5px var(--blue))}
 .vinyl{position:absolute;inset:0;border-radius:50%;animation:spin 2.6s linear infinite paused;
   background:conic-gradient(rgba(255,255,255,0),rgba(255,255,255,.2) 12%,rgba(255,255,255,0) 26%,rgba(255,255,255,0) 50%,rgba(255,255,255,.2) 62%,rgba(255,255,255,0) 76%),
     repeating-radial-gradient(circle,#0a0e15 0 2px,#161c28 2px 3.5px);
   box-shadow:0 22px 50px rgba(0,0,0,.55),inset 0 0 0 6px #05080d;transition:box-shadow .6s}
-.playing .vinyl{animation-play-state:running;box-shadow:0 22px 50px rgba(0,0,0,.55),0 0 70px rgba(255,176,32,.35),inset 0 0 0 6px #05080d}
-.label{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--amber),var(--coral));color:#1b0d00;font:800 1.05rem var(--display);box-shadow:inset 0 0 0 3px rgba(0,0,0,.22),0 0 0 5px #05080d}
+.playing .vinyl{animation-play-state:running;box-shadow:0 22px 50px rgba(0,0,0,.55),0 0 70px rgba(109,131,255,.35),inset 0 0 0 6px #05080d}
+.label{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;font:800 1.05rem var(--display);box-shadow:inset 0 0 0 3px rgba(0,0,0,.22),0 0 0 5px #05080d}
 .eq{display:flex;justify-content:center;align-items:flex-end;gap:4px;height:46px;margin-top:26px}
-.eq i{width:6px;height:6px;border-radius:3px;background:linear-gradient(var(--amber),var(--coral));opacity:.45;transition:opacity .4s;animation:eq .8s ease-in-out infinite alternate paused;animation-delay:calc(var(--i)*-.17s)}
+.eq i{width:6px;height:6px;border-radius:3px;background:linear-gradient(var(--blue),var(--violet));opacity:.45;transition:opacity .4s;animation:eq .8s ease-in-out infinite alternate paused;animation-delay:calc(var(--i)*-.17s)}
 .eq i:nth-child(3n){animation-duration:.55s}.eq i:nth-child(3n+2){animation-duration:.67s}
 .playing .eq i{opacity:1;animation-play-state:running}
 @keyframes eq{from{height:6px}to{height:46px}}
@@ -73,27 +73,27 @@ button.wide{width:100%}
 /* Attempt segments: only the one that changes animates */
 #segments{display:flex;gap:6px;height:38px;margin-top:6px}
 .seg{flex:1;display:grid;place-items:center;border-radius:12px;background:var(--glass);border:1px solid var(--line);font-size:.75rem;font-weight:700;color:var(--muted);backdrop-filter:blur(8px);transition:background .3s}
-.seg.cur{background:linear-gradient(135deg,var(--amber),var(--coral));color:#1b0d00;border-color:transparent;animation:glow 1.8s ease-in-out infinite}
-.seg.wrong{background:rgba(255,93,115,.2);border-color:var(--coral);color:var(--coral);animation:shake .45s}
+.seg.cur{background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;border-color:transparent;animation:glow 1.8s ease-in-out infinite}
+.seg.wrong{background:rgba(255,93,122,.2);border-color:var(--red);color:var(--red);animation:shake .45s}
 .seg.skip{border-style:dashed;animation:pop .35s}
 .seg.correct{background:var(--mint);color:#04261a;border-color:transparent;animation:win .7s}
-@keyframes glow{50%{box-shadow:0 0 22px rgba(255,176,32,.6)}}
+@keyframes glow{50%{box-shadow:0 0 22px rgba(109,131,255,.6)}}
 @keyframes win{40%{transform:scale(1.25);box-shadow:0 0 30px var(--mint)}}
 
 #game,#end,#final{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:24px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(16px)}
 #game:not([hidden]),#end:not([hidden]),#final:not([hidden]){animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
 .guess{position:relative}
 input[type=text]{width:100%;min-height:52px;font:inherit;color:var(--ink);background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:14px;padding:0 16px;transition:border-color .2s,box-shadow .2s}
-input[type=text]:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(255,176,32,.15);outline:none}
-#list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:5;margin:0;padding:6px;list-style:none;max-height:240px;overflow-y:auto;background:#0f1623;border:1px solid rgba(255,176,32,.5);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.6);animation:rise .2s both}
+input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(109,131,255,.15);outline:none}
+#list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:5;margin:0;padding:6px;list-style:none;max-height:240px;overflow-y:auto;background:#0e1226;border:1px solid rgba(109,131,255,.5);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.6);animation:rise .2s both}
 #list li{padding:11px 12px;border-radius:10px;cursor:pointer}
 #list li small{color:var(--muted);display:block}
-#list li.hl,#list li:hover{background:rgba(255,176,32,.14)}
+#list li.hl,#list li:hover{background:rgba(109,131,255,.14)}
 #list li.none{color:var(--muted);cursor:default}
 .vol{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
-.vol input{flex:1;accent-color:var(--amber);min-height:32px}
+.vol input{flex:1;accent-color:var(--blue);min-height:32px}
 #end h2,#final h2{margin:0;text-align:center;font:800 1.2rem var(--display)}
-.pts{font:800 2.4rem var(--display);text-align:center;margin:0;background:linear-gradient(135deg,var(--amber),var(--coral));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pts{font:800 2.4rem var(--display);text-align:center;margin:0;background:linear-gradient(135deg,var(--blue),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
 .answer{text-align:center;font-size:1.15rem;margin:0;line-height:1.5}
 #endArtist,.muted{color:var(--muted)}
 .muted{text-align:center;margin:0;font-size:.9rem}
@@ -101,9 +101,9 @@ input[type=text]:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(255,1
 #finalList{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 #finalList li{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:10px 12px;animation:rise .5s both;animation-delay:calc(var(--n)*90ms + 200ms)}
 #finalList small{color:var(--muted)}
-#finalList b{font-family:var(--display);color:var(--amber)}
+#finalList b{font-family:var(--display);color:var(--blue)}
 
-dialog{background:#0e1522;color:var(--ink);border:1px solid var(--line);border-radius:20px;width:min(92vw,420px);padding:20px}
+dialog{background:#0d1124;color:var(--ink);border:1px solid var(--line);border-radius:20px;width:min(92vw,420px);padding:20px}
 dialog[open]{animation:rise .35s both}
 dialog::backdrop{background:rgba(3,6,12,.7);backdrop-filter:blur(6px)}
 dialog h3{margin:18px 0 8px;font-size:.95rem}dialog h3:first-child{margin-top:0}
@@ -112,8 +112,36 @@ dialog h3{margin:18px 0 8px;font-size:.95rem}dialog h3:first-child{margin-top:0}
 .dist{display:grid;grid-template-columns:18px 1fr;gap:4px 8px;align-items:center;font-size:.85rem;margin-bottom:12px}
 .dist i{display:block;min-width:20px;background:#2a3446;border-radius:4px;padding:1px 6px;font-style:normal;text-align:right}
 .dist i.hot{background:var(--mint);color:#04261a}
-#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#0f1623;border:1px solid var(--amber);padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;text-align:center;z-index:60}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#0e1226;border:1px solid var(--blue);padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;text-align:center;z-index:60}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .conf{position:fixed;top:-16px;width:9px;height:14px;z-index:50;pointer-events:none;animation:fall var(--t) cubic-bezier(.2,.6,.4,1) forwards}
 @keyframes fall{to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* wrong-guess chips */
+#wrongs{display:flex;flex-wrap:wrap;gap:6px}#wrongs:empty{display:none}
+.wchip{font-size:.8rem;padding:5px 11px;border-radius:999px;background:rgba(255,93,122,.14);border:1px solid rgba(255,93,122,.5);color:#ff8fa3;animation:chip .45s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes chip{from{opacity:0;transform:scale(.4) translateY(8px)}}
+/* transition between songs: current content slides out, new content slides in */
+main.leaving>*{animation:slideout .3s ease-in forwards!important}
+main.entering>*{animation:slidein .6s cubic-bezier(.2,.8,.2,1) both}
+main.entering>:nth-child(2){animation-delay:.05s}main.entering>:nth-child(3){animation-delay:.1s}
+main.entering>:nth-child(4){animation-delay:.15s}main.entering>:nth-child(n+5){animation-delay:.2s}
+@keyframes slideout{to{opacity:0;transform:translateX(-36px) scale(.97)}}
+@keyframes slidein{from{opacity:0;transform:translateX(44px) scale(.97)}}
+/* song reveal: answer sharpens out of a blur, a light sweep crosses the card */
+#end{position:relative;overflow:hidden}
+#end:not([hidden]) .answer strong{display:inline-block;animation:reveal .9s .35s cubic-bezier(.2,.8,.2,1) both}
+#end:not([hidden]) #endArtist{display:inline-block;animation:rise .6s .9s both}
+@keyframes reveal{from{opacity:0;filter:blur(16px);letter-spacing:.35em;transform:scale(1.25)}}
+#end:not([hidden])::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%);transform:translateX(-120%);animation:sweep 1.2s .3s ease-out forwards}
+@keyframes sweep{to{transform:translateX(120%)}}
+/* correct guess: green card glow, bouncing title, shockwave from the record */
+#end.won{border-color:rgba(62,230,168,.7);box-shadow:0 0 50px rgba(62,230,168,.22)}
+#end.won h2{color:var(--mint);animation:bounce .8s cubic-bezier(.3,1.6,.5,1) both}
+#end.lost h2{color:var(--red)}
+@keyframes bounce{from{transform:scale(.3);opacity:0}}
+.win .record::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid var(--mint);pointer-events:none;animation:shock 1.2s ease-out forwards}
+.win .vinyl{box-shadow:0 22px 50px rgba(0,0,0,.55),0 0 90px rgba(62,230,168,.45),inset 0 0 0 6px #05080d}
+.lose .record{filter:saturate(.3) brightness(.8)}
+@keyframes shock{to{transform:scale(2);opacity:0}}

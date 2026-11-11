@@ -47,6 +47,7 @@
       <input id="input" type="text" placeholder="Search title, artist or pinyin…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="list">
       <ul id="list" role="listbox" hidden></ul>
     </div>
+    <div id="wrongs"></div>
     <button id="submit" class="primary wide">Submit guess</button>
     <label class="vol">Volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8"></label>
   </section>
@@ -55,7 +56,6 @@
     <h2 id="endTitle"></h2>
     <p id="endPts" class="pts"></p>
     <p class="answer"><strong id="endSong"></strong><br><span id="endArtist"></span></p>
-    <button id="full" class="wide">Play full song</button>
     <button id="next" class="primary wide">Next song</button>
   </section>
 
