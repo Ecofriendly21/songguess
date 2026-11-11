@@ -27,6 +27,26 @@ function shuffle(a) {
   return a;
 }
 
+/* ---------- Animation helpers ---------- */
+function pulse(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }   // restart a CSS animation
+function countUp(el, to, fmtFn, ms = 900) {       // ease-out number count-up
+  const t0 = performance.now();
+  (function step(t) {
+    const p = Math.min((t - t0) / ms, 1), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmtFn(Math.round(to * e));
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+function burst() {                                  // confetti: pieces fall and remove themselves
+  const colors = ['#ffb020', '#ff5d73', '#3ee6a8', '#ff2e88', '#00c2b8', '#f5efe6'];
+  for (let i = 0; i < 46; i++) {
+    const c = document.createElement('i'); c.className = 'conf';
+    c.style.cssText = `left:${Math.random() * 100}vw;background:${colors[i % colors.length]};--dx:${(Math.random() - .5) * 240}px;` +
+      `--r:${Math.random() * 900 - 450}deg;--t:${(1.8 + Math.random() * 1.4).toFixed(2)}s;animation-delay:${(Math.random() * .4).toFixed(2)}s`;
+    document.body.appendChild(c); setTimeout(() => c.remove(), 3800);
+  }
+}
+
 /* ---------- Audio (Web Audio API) ----------
    AudioBufferSourceNode.start(when, offset, duration) schedules the stop on the audio
    clock, so clips end exactly on time with no bleed (unlike setTimeout + pause()). */
@@ -49,12 +69,14 @@ function loadBuffer(song) {                     // fetch + decode once, then cac
   }
   return buffers.get(song.src);
 }
-function setBar(seconds, fraction) {            // animate progress bar over `seconds`
-  const bar = $('bar');
-  bar.style.transition = 'none'; bar.style.width = '0';
+const RING = 2 * Math.PI * 56;                  // circumference of the progress ring (r = 56)
+function setBar(seconds, fraction) {            // sweep the ring over `seconds`; stop = reset
+  const ring = $('ring');
+  ring.style.transition = 'none'; ring.style.strokeDashoffset = RING;
+  $('stage').classList.toggle('playing', !!seconds);
   if (!seconds) return;
-  void bar.offsetWidth;                         // force reflow so the transition restarts
-  bar.style.transition = `width ${seconds}s linear`; bar.style.width = fraction * 100 + '%';
+  void ring.getBoundingClientRect();            // force reflow so the transition restarts
+  ring.style.transition = `stroke-dashoffset ${seconds}s linear`; ring.style.strokeDashoffset = RING * (1 - fraction);
 }
 function stopAudio() {
   playToken++;
@@ -193,16 +215,17 @@ function submit() {
   if (selected === null) return toast('Pick a song from the list first.');
   const ok = selected === round.idx;
   round.res.push(ok ? 'correct' : 'wrong');
+  if (!ok) pulse($('guessbox'), 'shake');
   selected = null; $('input').value = '';
   if (ok) return finish(true);
   if (round.res.length >= MAX) return finish(false);
-  persist(); render(); playClip();
+  persist(); render(); pulse($('stage'), 'pop'); playClip();
 }
 function skip() {
   if (round.over) return;
   round.res.push('skip');
   if (round.res.length >= MAX) return finish(false);
-  persist(); render(); playClip();
+  persist(); render(); pulse($('stage'), 'pop'); playClip();
 }
 const playClip = () => playSong(round.song, CLIPS[Math.min(round.res.length, MAX - 1)]);
 
@@ -213,24 +236,30 @@ function render() {
   $('modeDaily').classList.toggle('on', mode === 'daily');
   $('modeUnl').classList.toggle('on', mode === 'unlimited');
   $('game').hidden = over; $('end').hidden = !over || fin; $('final').hidden = !fin;
-  $('segments').hidden = fin; $('progress').hidden = fin;
-  $('scorebar').innerHTML = `<span>Score ${fmt(total())}</span><span>Best ${fmt(best)}</span>`;
-  $('segments').innerHTML = CLIPS.map((c, i) => {
-    const cls = round.res[i] || (i === n && !over ? 'cur' : '');
-    return `<div class="seg ${cls}">${c}s</div>`;
-  }).join('');
+  $('segments').hidden = fin; $('stage').hidden = fin;
+  $('recLabel').textContent = over || fin ? '▶' : CLIPS[n] + 's';
+  if ($('scoreNow').textContent !== fmt(total())) { $('scoreNow').textContent = fmt(total()); pulse($('scoreNow'), 'bump'); }
+  $('bestNow').textContent = fmt(best);
+  if ($('segments').children.length !== MAX) $('segments').innerHTML = CLIPS.map(c => `<div class="seg">${c}s</div>`).join('');
+  [...$('segments').children].forEach((el, i) => {   // update in place so only changed segments animate
+    const cls = ('seg ' + (round.res[i] || (i === n && !over ? 'cur' : ''))).trim();
+    if (el.className !== cls) el.className = cls;
+  });
   if (fin) {
     $('status').textContent = mode === 'daily' ? `Daily #${dayNumber() + 1}` : 'Unlimited';
-    $('finalScore').textContent = `${fmt(total())} / ${fmt(maxPts)}`;
+    if (!game.counted) { game.counted = true; countUp($('finalScore'), total(), v => `${fmt(v)} / ${fmt(maxPts)}`, 1400); }
+    else $('finalScore').textContent = `${fmt(total())} / ${fmt(maxPts)}`;
+    if (game.newBest && !game.celebrated) { game.celebrated = true; burst(); }
     $('finalBest').textContent = game.newBest ? '🏆 New best!' : `Best: ${fmt(best)}`;
     $('finalList').innerHTML = game.order.map((i, k) =>
-      `<li><span>${esc(songs[i].title)}<br><small>${esc(songs[i].artist)}</small></span><b>${fmt(game.scores[k])}</b></li>`).join('');
+      `<li style="--n:${k}"><span>${esc(songs[i].title)}<br><small>${esc(songs[i].artist)}</small></span><b>${fmt(game.scores[k])}</b></li>`).join('');
     $('again').hidden = mode === 'daily';
     $('finalNote').textContent = mode === 'daily' ? 'Come back tomorrow for a new round.' : '';
   } else if (over) {
     $('status').textContent = `Song ${game.pos + 1} of ${game.order.length}`;
     $('endTitle').textContent = round.won ? `Got it in ${n}!` : 'Missed it';
-    $('endPts').textContent = '+' + fmt(game.scores[game.pos]);
+    if (!round.counted) { round.counted = true; countUp($('endPts'), game.scores[game.pos], v => '+' + fmt(v)); if (round.won) burst(); }
+    else $('endPts').textContent = '+' + fmt(game.scores[game.pos]);
     $('endSong').textContent = round.song.title; $('endArtist').textContent = round.song.artist;
     $('next').textContent = game.complete ? 'See results' : 'Next song';
   } else {
@@ -297,6 +326,7 @@ function moveHl(d) {
 function bind() {
   $('play').onclick = playClip;
   $('skip').onclick = skip;
+  $('record').onclick = () => (round.over ? $('full').click() : playClip());
   $('submit').onclick = submit;
   $('next').onclick = nextSong;
   $('again').onclick = () => { stopAudio(); newGame(); };
@@ -342,6 +372,7 @@ function bind() {
 
 /* ---------- Boot ---------- */
 (async function init() {
+  $('eq').innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="--i:${i}"></i>`).join('');
   bind();
   try {
     const r = await fetch('songs.json');

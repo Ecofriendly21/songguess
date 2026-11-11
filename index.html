@@ -4,11 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Guess the Song</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Unbounded:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="aurora"><i></i><i></i><i></i></div>
+
 <header>
-  <h1>Guess the Song</h1>
+  <div class="logo"><span class="dot"></span><h1>Guess the Song</h1></div>
   <nav>
     <button id="modeDaily" class="tab">Daily</button>
     <button id="modeUnl" class="tab">Unlimited</button>
@@ -17,17 +22,28 @@
 </header>
 
 <main>
+  <div id="scorebar">
+    <div class="chip"><small>Score</small><b id="scoreNow">0</b></div>
+    <div class="chip right"><small>Best</small><b id="bestNow">0</b></div>
+  </div>
   <p id="status" aria-live="polite"></p>
-  <div id="scorebar"></div>
+
+  <div id="stage" class="stage">
+    <button id="record" class="record" aria-label="Play clip">
+      <svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="56"/><circle id="ring" cx="60" cy="60" r="56"/></svg>
+      <span class="vinyl"></span>
+      <span class="label" id="recLabel">▶</span>
+    </button>
+    <div id="eq" class="eq" aria-hidden="true"></div>
+  </div>
   <div id="segments" aria-label="Attempts"></div>
-  <div id="progress"><div id="bar"></div></div>
 
   <section id="game">
     <div class="row">
       <button id="play" class="primary">Play</button>
       <button id="skip">Skip</button>
     </div>
-    <div class="guess">
+    <div class="guess" id="guessbox">
       <input id="input" type="text" placeholder="Search title, artist or pinyin…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="list">
       <ul id="list" role="listbox" hidden></ul>
     </div>
