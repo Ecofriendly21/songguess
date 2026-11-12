@@ -9,14 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Unbounded:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="at-menu">
 <div class="aurora"><i></i><i></i><i></i></div>
 
 <header>
-  <div class="logo"><span class="dot"></span><h1>Guess the Song</h1></div>
+  <div class="logo" id="logo" role="button" tabindex="0" aria-label="Back to menu"><span class="dot"></span><h1>Guess the Song</h1></div>
   <nav>
-    <button id="modeDaily" class="tab">Daily</button>
-    <button id="modeUnl" class="tab">Unlimited</button>
+    <button id="menuBtn" class="tab">Menu</button>
+    <button id="sfxBtn" class="tab" aria-label="Sound effects on or off">🔊</button>
     <button id="statsBtn" class="tab" aria-label="Statistics">Stats</button>
   </nav>
 </header>
@@ -69,6 +69,25 @@
       <button id="again" class="primary">Play again</button>
     </div>
     <p id="finalNote" class="muted"></p>
+  </section>
+
+  <section id="menu">
+    <div class="hero">
+      <span class="dot big"></span>
+      <h2>Guess the song</h2>
+      <p class="muted">5 songs a round. The shorter the clip, the more points.</p>
+    </div>
+    <div class="tiles">
+      <button id="goDaily" class="tile primary"><span class="t-title">Daily</span><span class="t-sub" id="dailySub"></span><span class="t-best" id="dailyBest"></span></button>
+      <button id="goUnl" class="tile"><span class="t-title">Unlimited</span><span class="t-sub" id="unlSub"></span><span class="t-best" id="unlBest"></span></button>
+    </div>
+    <div class="filter">
+      <div class="f-head"><b>Artist filter</b><small id="filterNote"></small></div>
+      <p class="muted" style="text-align:left">Applies to Unlimited. Daily always uses every song, so it's the same for everyone.</p>
+      <input id="artistSearch" type="text" placeholder="Search artists…" autocomplete="off" spellcheck="false">
+      <div id="chips"></div>
+      <button id="resetFilter">Reset to all artists</button>
+    </div>
   </section>
 </main>
 

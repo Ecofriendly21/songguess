@@ -47,15 +47,49 @@ function burst() {                                  // confetti: pieces fall and
   }
 }
 
+/* ---------- Sound effects (synthesised with Web Audio, no files needed) ---------- */
+let sfxOn = store.get('songless.sfx', true);
+function tone(f, t0, dur, type = 'sine', vol = .2, f2) {   // one enveloped note, optional pitch slide to f2
+  const c = audioCtx(), o = c.createOscillator(), g = c.createGain(), t = c.currentTime + t0;
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol * 1.3, t + 0.012);   // 1.3 = overall UI-sound loudness
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + dur + 0.05);
+}
+const SFX = {
+  start() { [392, 523, 659, 784].forEach((f, i) => tone(f, i * .06, .24, 'triangle', .2)); tone(196, 0, .35, 'sine', .16, 392); },  // rising sparkle
+  back()  { tone(520, 0, .12, 'triangle', .2, 330); tone(330, .09, .18, 'triangle', .18, 220); },                                     // soft descend
+  next()  { tone(300, 0, .24, 'sine', .16, 900); tone(600, .05, .2, 'triangle', .08, 1500); },                                         // whoosh up
+  skip()  { tone(700, 0, .13, 'sawtooth', .12, 240); },                                                                                // quick swish
+  wrong() { tone(170, 0, .24, 'sawtooth', .15, 90); tone(120, .12, .26, 'square', .07, 70); },                                         // buzzer thud
+  win()   { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .32, 'triangle', .22)); tone(1568, .38, .5, 'sine', .14); },    // bright arpeggio
+  lose()  { [392, 349, 311, 262].forEach((f, i) => tone(f, i * .14, .32, 'triangle', .17)); },                                         // sad descent
+  final(best) {                                                                                                                         // end-of-round score reveal
+    for (let i = 0; i < 18; i++) tone(500 + i * 45, i * .075, .06, 'square', .09);                                                       // rising tally roll while the score counts up
+    [262, 330, 392, 523].forEach(f => tone(f, 1.4, .9, 'triangle', .22));                                                                // big chord when it lands
+    tone(1047, 1.4, .8, 'sine', .18); tone(131, 1.4, 1.0, 'sine', .25);
+    if (best) [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 1.9 + i * .08, .5, 'triangle', .2));                          // extra fanfare for a new best
+  },
+  tick()  { tone(900, 0, .05, 'square', .1); tone(1350, .02, .04, 'square', .05); },                                                                                       // tiny click
+};
+function sfx(name, arg) {
+  if (!sfxOn) return;
+  try { const c = audioCtx(); c.resume(); sfxGain.gain.value = +$('vol').value * 1.2; SFX[name](arg); } catch {}   // follows the volume slider
+}
+
 /* ---------- Audio (Web Audio API) ----------
    AudioBufferSourceNode.start(when, offset, duration) schedules the stop on the audio
    clock, so clips end exactly on time with no bleed (unlike setTimeout + pause()). */
-let ctx, gain, source = null, playToken = 0;
+let ctx, gain, sfxGain, source = null, playToken = 0;
 const buffers = new Map();                      // src -> Promise<AudioBuffer>
 function audioCtx() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     gain = ctx.createGain(); gain.gain.value = +$('vol').value; gain.connect(ctx.destination);
+    sfxGain = ctx.createGain(); const lim = ctx.createDynamicsCompressor();   // separate bus for UI sounds; the compressor stops stacked notes clipping
+    sfxGain.connect(lim); lim.connect(ctx.destination);
   }
   return ctx;
 }
@@ -165,21 +199,25 @@ function startRound(saved) {
   render();
 }
 function newGame() {
-  const n = Math.min(SONGS_PER_ROUND, songs.length);
+  const pool = mode === 'daily' ? [...songs.keys()] : poolIdx();   // Unlimited honours the artist filter
+  const n = Math.min(SONGS_PER_ROUND, pool.length);
   let order = [];
-  if (mode === 'daily') order = seededShuffle([...songs.keys()], dayNumber() + 1).slice(0, n);
-  else while (order.length < n) {               // no repeats until the whole list is exhausted
-    if (!bag.length) bag = shuffle([...songs.keys()].filter(i => !order.includes(i)));
-    order.push(bag.pop());
+  if (mode === 'daily') order = seededShuffle(pool, dayNumber() + 1).slice(0, n);
+  else {
+    bag = bag.filter(i => pool.includes(i));
+    while (order.length < n) {                  // no repeats until the whole pool is exhausted
+      if (!bag.length) bag = shuffle(pool.filter(i => !order.includes(i)));
+      order.push(bag.pop());
+    }
   }
-  game = { order, pos: 0, rows: [], scores: [], complete: false, viewFinal: false, newBest: false };
+  game = { order, pool, pos: 0, rows: [], scores: [], complete: false, viewFinal: false, newBest: false };
   startRound();
 }
 function setMode(m) {
   stopAudio(); mode = m; store.set('songless.mode', m);
   const sv = m === 'daily' ? store.get('songless.daily', null) : null;
   if (sv && sv.day === dayNumber() && sv.v === 2 && Array.isArray(sv.order) && sv.order.every(i => songs[i])) {
-    game = { order: sv.order, pos: sv.pos, rows: sv.rows, scores: sv.scores, complete: sv.complete, viewFinal: sv.complete, newBest: false };
+    game = { order: sv.order, pos: sv.pos, rows: sv.rows, scores: sv.scores, complete: sv.complete, viewFinal: sv.complete, newBest: false, pool: [...songs.keys()] };
     startRound(sv);                             // restore today's progress
   } else newGame();
 }
@@ -206,7 +244,9 @@ function finish(won) {
     if (game.newBest) store.set(highKey(mode), total());
   }
   persist(); render();
-  playSong(round.song);                         // reveal: play the whole song automatically
+  sfx(won ? 'win' : 'lose');
+  const r = round;                              // reveal: after the jingle, play the whole song automatically
+  setTimeout(() => { if (round === r && r.over) playSong(r.song); }, 750);
 }
 // Slide the current content out, run fn (which changes state), slide the new content in.
 let swapping = false;
@@ -220,8 +260,8 @@ async function swap(fn) {
   setTimeout(() => m.classList.remove('entering'), 900);
 }
 function nextSong() {
-  stopAudio();
-  if (game.complete) swap(() => { game.viewFinal = true; render(); });
+  stopAudio(); sfx('next');
+  if (game.complete) swap(() => { game.viewFinal = true; render(); sfx('final', game.newBest); });   // sound lands with the count-up
   else swap(() => { game.pos++; startRound(); persist(); });
 }
 function submit() {
@@ -233,13 +273,15 @@ function submit() {
   round.wrongs.push(pick);                      // wrong guess: costs points, clip length stays the same
   pulse($('guessbox'), 'shake');
   if (worth(round) <= 0) return finish(false);
+  sfx('wrong');
   persist(); render();
 }
 function skip() {
   if (round.over) return;
   if (round.skips >= MAX - 1) return finish(false);       // already on the longest clip = "Give up"
-  round.skips++;
-  persist(); render(); pulse($('stage'), 'pop'); playClip();
+  round.skips++; sfx('skip');
+  persist(); render(); pulse($('stage'), 'pop');
+  setTimeout(playClip, 160);                    // let the swish finish so it doesn't cover the start of the clip
 }
 const playClip = () => playSong(round.song, CLIPS[round.skips]);
 
@@ -247,8 +289,6 @@ const playClip = () => playSong(round.song, CLIPS[round.skips]);
 function render() {
   const n = round.skips, over = round.over, fin = game.viewFinal;
   const best = store.get(highKey(mode), 0), maxPts = START_PTS * game.order.length;
-  $('modeDaily').classList.toggle('on', mode === 'daily');
-  $('modeUnl').classList.toggle('on', mode === 'unlimited');
   $('game').hidden = over; $('end').hidden = !over || fin; $('final').hidden = !fin;
   $('segments').hidden = fin; $('stage').hidden = fin;
   $('recLabel').textContent = over || fin ? '▶' : CLIPS[n] + 's';
@@ -331,7 +371,7 @@ function buildKey(s) {
 function renderList() {
   const q = $('input').value.trim().toLowerCase();
   const nq = norm(q);
-  matches = songs.map((s, i) => ({ s, i })).filter(({ s }) => !nq || s._key.includes(nq));
+  matches = game.pool.map(i => ({ s: songs[i], i })).filter(({ s }) => !nq || s._key.includes(nq));   // only songs in this game's pool
   hl = matches.length ? 0 : -1;
   $('list').innerHTML = matches.length
     ? matches.map(({ s, i }, k) => `<li role="option" data-i="${i}" class="${k === hl ? 'hl' : ''}">${esc(s.title)}<small>${esc(s.artist)}</small></li>`).join('')
@@ -352,18 +392,18 @@ function moveHl(d) {
 function bind() {
   $('play').onclick = playClip;
   $('skip').onclick = skip;
+  $('sfxBtn').textContent = sfxOn ? '🔊' : '🔇';
+  $('sfxBtn').onclick = () => { sfxOn = !sfxOn; store.set('songless.sfx', sfxOn); $('sfxBtn').textContent = sfxOn ? '🔊' : '🔇'; sfx('tick'); };
   $('record').onclick = () => (round.over ? (source || el ? stopAudio() : playSong(round.song)) : playClip());
   $('submit').onclick = submit;
   $('next').onclick = nextSong;
-  $('again').onclick = () => { stopAudio(); swap(newGame); };
-  $('modeDaily').onclick = () => setMode('daily');
-  $('modeUnl').onclick = () => setMode('unlimited');
+  $('again').onclick = () => { stopAudio(); sfx('start'); swap(newGame); };
   $('share').onclick = async () => {
-    try { await navigator.clipboard.writeText(shareText()); toast('Result copied!'); }
+    try { await navigator.clipboard.writeText(shareText()); toast('Result copied!'); sfx('tick'); }
     catch { prompt('Copy your result:', shareText()); }
   };
-  $('statsBtn').onclick = () => { $('statsBody').innerHTML = statsHTML('daily') + statsHTML('unlimited'); $('statsDlg').showModal(); };
-  $('closeStats').onclick = () => $('statsDlg').close();
+  $('statsBtn').onclick = () => { sfx('tick'); $('statsBody').innerHTML = statsHTML('daily') + statsHTML('unlimited'); $('statsDlg').showModal(); };
+  $('closeStats').onclick = () => { sfx('tick'); $('statsDlg').close(); };
   $('vol').oninput = e => { if (gain) gain.gain.value = +e.target.value; if (el) el.volume = +e.target.value; store.set('songless.vol', +e.target.value); };
   $('vol').value = store.get('songless.vol', 0.8);
 
@@ -378,7 +418,7 @@ function bind() {
     const li = e.target.closest('li[data-i]'); if (li) choose(+li.dataset.i);
   });
   document.addEventListener('keydown', e => {
-    if ($('statsDlg').open || !round) return;
+    if ($('statsDlg').open || !round || document.body.classList.contains('at-menu')) return;
     if (e.target === input) {
       if (e.key === 'ArrowDown') { e.preventDefault(); $('list').hidden ? renderList() : moveHl(1); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); moveHl(-1); }
@@ -395,6 +435,56 @@ function bind() {
   });
 }
 
+/* ---------- Menu ---------- */
+let filter = new Set();                         // selected artists for Unlimited; empty = all artists
+let artists = [];                               // [{name, count, _key}] sorted by song count
+const poolIdx = () => {
+  const p = [...songs.keys()].filter(i => !filter.size || filter.has(songs[i].artist));
+  return p.length ? p : [...songs.keys()];
+};
+function renderChips() {
+  const q = norm($('artistSearch').value);
+  $('chips').innerHTML = artists.filter(a => !q || a._key.includes(q)).map(a =>
+    `<button class="achip${filter.has(a.name) ? ' on' : ''}" data-a="${esc(a.name)}">${esc(a.name)}<small>${a.count}</small></button>`).join('')
+    || '<span class="muted">No artists match</span>';
+}
+function renderInfo() {                         // tile subtitles, best scores, filter summary
+  const n = poolIdx().length;
+  $('unlSub').textContent = filter.size ? `${n} songs · ${filter.size} artist${filter.size > 1 ? 's' : ''}` : `All ${n} songs`;
+  $('filterNote').textContent = filter.size ? `${filter.size} selected` : 'All artists';
+  const sv = store.get('songless.daily', null), t = sv && sv.v === 2 && sv.day === dayNumber() ? sv : null;
+  $('dailySub').textContent = !t ? 'New round today' : t.complete ? `Played · ${fmt(t.scores.reduce((x, y) => x + y, 0))} pts`
+    : (t.pos || t.skips || t.wrongs.length) ? 'Continue today’s round' : 'New round today';
+  $('dailyBest').textContent = 'Best ' + fmt(store.get(highKey('daily'), 0));
+  $('unlBest').textContent = 'Best ' + fmt(store.get(highKey('unlimited'), 0));
+}
+function saveFilter() { store.set('songless.filter', [...filter]); bag = []; renderInfo(); }
+function playMode(m) { sfx('start'); swap(() => { document.body.classList.remove('at-menu'); setMode(m); }); }
+function showMenu() {
+  const mid = mode === 'unlimited' && round && game && !game.complete && (game.pos > 0 || round.skips || round.wrongs.length || round.over);
+  if (mid && !confirm('Leave this round? Your Unlimited progress will be lost.')) return;
+  stopAudio(); sfx('back'); swap(() => { document.body.classList.add('at-menu'); renderInfo(); });
+}
+function initMenu() {
+  const counts = new Map();
+  songs.forEach(s => counts.set(s.artist, (counts.get(s.artist) || 0) + 1));
+  artists = [...counts].map(([name, count]) => { const o = { title: '', artist: name }; buildKey(o); return { name, count, _key: o._key }; })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  filter = new Set(store.get('songless.filter', []).filter(a => counts.has(a)));
+  $('goDaily').onclick = () => playMode('daily');
+  $('goUnl').onclick = () => playMode('unlimited');
+  $('menuBtn').onclick = showMenu;
+  $('logo').onclick = () => { if (!document.body.classList.contains('at-menu')) showMenu(); };
+  $('artistSearch').oninput = renderChips;
+  $('resetFilter').onclick = () => { filter.clear(); saveFilter(); renderChips(); };
+  $('chips').onclick = e => {                   // toggle in place so the list keeps its scroll position
+    const b = e.target.closest('.achip'); if (!b) return;
+    const a = b.dataset.a; filter.has(a) ? filter.delete(a) : filter.add(a);
+    b.classList.toggle('on', filter.has(a)); saveFilter();
+  };
+  renderChips(); renderInfo();
+}
+
 /* ---------- Boot ---------- */
 (async function init() {
   $('eq').innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="--i:${i}"></i>`).join('');
@@ -409,7 +499,7 @@ function bind() {
   }
   try {
     songs.forEach(buildKey);
-    setMode(store.get('songless.mode', 'daily'));
+    initMenu();                                 // always start on the menu
   } catch (e) {                                 // show the real error on the page instead of failing silently
     $('status').textContent = 'Error: ' + e.message;
     console.error(e);
