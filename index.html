@@ -9,11 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Unbounded:wght@500;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body class="at-menu">
+<body class="at-hub">
 <div class="aurora"><i></i><i></i><i></i></div>
 
 <header>
-  <div class="logo" id="logo" role="button" tabindex="0" aria-label="Back to menu"><span class="dot"></span><h1>Guess the Song</h1></div>
+  <div class="logo" id="logo" role="button" tabindex="0" aria-label="Back to games"><span class="dot"></span><span class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 32V15l13-3v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="16" cy="33" rx="4.5" ry="3.6" fill="#fff"/><ellipse cx="29" cy="30" rx="4.5" ry="3.6" fill="#fff"/></svg></span><h1>Guess the Song</h1></div>
   <nav>
     <button id="menuBtn" class="tab">Menu</button>
     <button id="sfxBtn" class="tab" aria-label="Sound effects on or off">🔊</button>
@@ -22,11 +22,19 @@
 </header>
 
 <main>
+  <!-- Daily only: difficulty climbs from Easy to Expert across the five songs -->
+  <div id="diffbar" class="diffbar" hidden aria-label="Daily difficulty">
+    <div class="d-names" id="diffNames"><span class="d-easy">Easy</span><span class="d-med">Medium</span><span class="d-exp">Expert</span></div>
+    <div class="d-cells" id="diffCells"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
   <div id="scorebar">
     <div class="chip"><small>Score</small><b id="scoreNow">0</b></div>
     <div class="chip right"><small>Best</small><b id="bestNow">0</b></div>
   </div>
   <p id="status" aria-live="polite"></p>
+
+  <!-- Points available right now (both games) -->
+  <div class="bigpts" id="bigptsBox"><b id="bigpts">10,000</b><span id="bigcap"></span></div>
 
   <div id="stage" class="stage">
     <button id="record" class="record" aria-label="Play clip">
@@ -37,6 +45,16 @@
     <div id="eq" class="eq" aria-hidden="true"></div>
   </div>
   <div id="segments" aria-label="Attempts"></div>
+
+  <!-- Bandle only: big score + one waveform lane per stem -->
+  <div id="bandstage" class="bandstage" hidden>
+    <div id="lanes" class="lanes" role="button" tabindex="0" aria-label="Tap or drag to play from any point in the clip"></div>
+    <div class="seekrow">
+      <button id="back5" class="mini" aria-label="Back 5 seconds">−5s</button>
+      <span id="timeNow" class="muted">0:00 / 0:30</span>
+      <button id="fwd5" class="mini" aria-label="Forward 5 seconds">+5s</button>
+    </div>
+  </div>
 
   <section id="game">
     <div class="row">
@@ -71,22 +89,51 @@
     <p id="finalNote" class="muted"></p>
   </section>
 
+  <!-- First screen: pick a game -->
+  <section id="hub">
+    <div class="hero">
+      <span class="brand big"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 32V15l13-3v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="16" cy="33" rx="4.5" ry="3.6" fill="#fff"/><ellipse cx="29" cy="30" rx="4.5" ry="3.6" fill="#fff"/></svg></span>
+      <h2>Guess the song</h2>
+      <p class="muted">Pick a game.</p>
+    </div>
+    <div class="tiles">
+      <button id="go-songless" class="tile primary"><span class="t-head"><i class="glogo disc"></i><span class="t-title">Songless</span></span><span class="t-sub">Name the song from a short clip.</span><span class="t-best" id="info-songless"></span></button>
+      <button id="go-bandle" class="tile"><span class="t-head"><i class="glogo bars"></i><span class="t-title">Bandle</span></span><span class="t-sub">Drums first, then bass, then the full band.</span><span class="t-best" id="info-bandle"></span></button>
+    </div>
+  </section>
+
+  <!-- Per-game menu: Daily / Unlimited + filters -->
   <section id="menu">
     <div class="hero">
+      <button id="backHub" class="tab">← All games</button>
       <span class="dot big"></span>
-      <h2>Guess the song</h2>
-      <p class="muted">5 songs a round. The shorter the clip, the more points.</p>
+      <h2 id="menuTitle">Songless</h2>
+      <p class="muted" id="menuBlurb"></p>
     </div>
     <div class="tiles">
       <button id="goDaily" class="tile primary"><span class="t-title">Daily</span><span class="t-sub" id="dailySub"></span><span class="t-best" id="dailyBest"></span></button>
       <button id="goUnl" class="tile"><span class="t-title">Unlimited</span><span class="t-sub" id="unlSub"></span><span class="t-best" id="unlBest"></span></button>
     </div>
     <div class="filter">
-      <div class="f-head"><b>Artist filter</b><small id="filterNote"></small></div>
+      <div class="f-head"><b>Unlimited filter</b><small id="filterNote"></small></div>
       <p class="muted" style="text-align:left">Applies to Unlimited. Daily always uses every song, so it's the same for everyone.</p>
+      <div class="ltabs" id="langTabs" role="tablist" aria-label="Song language">
+        <button class="ltab on" data-l="all" role="tab">All <small></small></button>
+        <button class="ltab" data-l="zh" role="tab">Chinese <small></small></button>
+        <button class="ltab" data-l="en" role="tab">English <small></small></button>
+      </div>
+      <div id="tierBox">
+        <div class="f-head"><b>Popularity</b><small>Pick any, or none for all</small></div>
+        <div class="ltabs" id="tierTabs" aria-label="Song popularity">
+          <button class="ttab" data-t="hits">Hits <small></small></button>
+          <button class="ttab" data-t="familiar">Familiar <small></small></button>
+          <button class="ttab" data-t="deep">Deep cuts <small></small></button>
+        </div>
+      </div>
       <input id="artistSearch" type="text" placeholder="Search artists…" autocomplete="off" spellcheck="false">
       <div id="chips"></div>
-      <button id="resetFilter">Reset to all artists</button>
+      <p id="poolWarn" class="muted" hidden></p>
+      <button id="resetFilter">Reset filters</button>
     </div>
   </section>
 </main>

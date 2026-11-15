@@ -3,6 +3,7 @@
   --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
   /* aliases so builder.html keeps working */
   --surface:#11152b; --text:var(--ink); --accent:var(--blue); --bad:var(--red); --ok:var(--mint); --skip:#5b6578;
+  --l0:#35d6e8; --l1:#4f8cff; --l2:#a35cff; --l3:#ff6fb5;   /* Bandle lane colours: drums, bass, music, vocals */
   --display:"Unbounded","DM Sans",system-ui,sans-serif;
   font-family:"DM Sans","Segoe UI",system-ui,sans-serif;
 }
@@ -103,10 +104,11 @@ input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(109,13
 #finalList small{color:var(--muted)}
 #finalList b{font-family:var(--display);color:var(--blue)}
 
-dialog{background:#0d1124;color:var(--ink);border:1px solid var(--line);border-radius:20px;width:min(92vw,420px);padding:20px}
+dialog{background:#0d1124;color:var(--ink);border:1px solid var(--line);border-radius:20px;width:min(92vw,420px);max-height:88dvh;overflow-y:auto;padding:20px}
 dialog[open]{animation:rise .35s both}
 dialog::backdrop{background:rgba(3,6,12,.7);backdrop-filter:blur(6px)}
 dialog h3{margin:18px 0 8px;font-size:.95rem}dialog h3:first-child{margin-top:0}
+dialog h2.sg{margin:26px 0 4px;font:800 1.05rem var(--display)}dialog h2.sg:first-child{margin-top:0}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;gap:6px}
 .stats b{display:block;font:800 1.4rem var(--display)}.stats span{font-size:.72rem;color:var(--muted)}
 .dist{display:grid;grid-template-columns:18px 1fr;gap:4px 8px;align-items:center;font-size:.85rem;margin-bottom:12px}
@@ -151,7 +153,7 @@ main.entering>:nth-child(4){animation-delay:.15s}main.entering>:nth-child(n+5){a
 #menu{display:none;flex-direction:column;gap:18px}
 body.at-menu #menu{display:flex}
 body.at-menu main>:not(#menu){display:none!important}
-body.at-menu #menuBtn{display:none}
+body.at-menu #menuBtn,body.at-hub #menuBtn{display:none}
 .hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:6px}
 .dot.big{width:88px;height:88px}
 .hero h2{margin:0;font:800 1.9rem/1.1 var(--display);background:linear-gradient(135deg,var(--blue),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -170,3 +172,92 @@ body.at-menu #menuBtn{display:none}
 body.at-menu #menu>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
 body.at-menu #menu>:nth-child(2){animation-delay:.08s}body.at-menu #menu>:nth-child(3){animation-delay:.16s}
 @media (max-width:430px){.tiles{grid-template-columns:1fr}.tile{min-height:104px}}
+
+/* language tabs (menu) */
+.ltabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:14px}
+.ltab,.ttab{min-height:42px;padding:0 8px;border:0;border-radius:11px;background:none;color:var(--muted);font-size:.9rem}
+.ltab:hover,.ttab:hover{transform:none;color:var(--ink)}
+.ltab small,.ttab small{opacity:.65;margin-left:4px}
+.ltab.on,.ttab.on{background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;animation:pop .3s}
+.ltab:disabled,.ttab:disabled{opacity:.35;cursor:not-allowed}
+
+/* game picker (first screen) */
+#hub{display:none;flex-direction:column;gap:18px}
+body.at-hub #hub{display:flex}
+body.at-hub main>:not(#hub){display:none!important}
+body.at-hub #hub>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
+body.at-hub #hub>:nth-child(2){animation-delay:.08s}
+#hub .tiles{grid-template-columns:1fr}
+#hub .tile{min-height:112px}
+.tile:disabled{transform:none;border-color:var(--line)}
+#backHub{align-self:flex-start;margin-bottom:-4px}
+/* Bandle: stage names are longer than "0.5s", so the vinyl label is smaller */
+.is-bandle .label{font-size:.7rem}
+
+/* ================= Bandle ================= */
+/* Cooler cyan-to-violet palette so it reads as its own game */
+body.is-bandle{--blue:#2fd0e6;--violet:#8b5cff}
+.is-bandle .aurora i:nth-child(1){background:#0fb5c9}
+.is-bandle button.primary,.is-bandle .tab.on,.is-bandle .ltab.on,.is-bandle .ttab.on,.is-bandle .achip.on{color:#04121a}
+.is-bandle #game,.is-bandle #end,.is-bandle #final,.is-bandle .filter{border-radius:18px}
+/* logo: the spinning disc becomes four little bars */
+.is-bandle .dot,.glogo.bars{border-radius:0;box-shadow:none;animation:none;background:
+  linear-gradient(var(--l0),var(--l0)) 0% 50%/16% 60% no-repeat,
+  linear-gradient(var(--l1),var(--l1)) 33% 50%/16% 100% no-repeat,
+  linear-gradient(var(--l2),var(--l2)) 66% 50%/16% 40% no-repeat,
+  linear-gradient(var(--l3),var(--l3)) 100% 50%/16% 80% no-repeat}
+
+.bandstage{display:flex;flex-direction:column;gap:16px;padding:20px 16px 14px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.28));border:1px solid var(--line);transition:border-color .4s,box-shadow .4s}
+.bigpts{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:8px 0 2px}
+.bigpts b{font:800 clamp(3rem,17vw,4.6rem)/1 var(--display);letter-spacing:-.02em;color:var(--blue);text-shadow:0 0 34px color-mix(in srgb,var(--blue) 45%,transparent);font-variant-numeric:tabular-nums}
+.bigpts span{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.lanes{position:relative;display:flex;flex-direction:column;gap:10px;cursor:pointer;border-radius:12px;touch-action:pan-y;user-select:none;--lw:62px;--lg:12px}
+.lanes:focus-visible{outline:2px solid var(--blue);outline-offset:6px}
+.lane{display:grid;grid-template-columns:var(--lw) 1fr;align-items:center;gap:var(--lg)}
+.lname{display:flex;flex-direction:column;gap:2px;line-height:1.15}
+.lname b{font-size:.85rem;color:var(--muted);transition:color .4s}
+.lname small{font-size:.66rem;color:var(--muted)}
+.lane.on .lname b{color:var(--c)}
+.lane.next .lname small{color:var(--ink)}
+.bars{display:flex;align-items:center;justify-content:space-between;gap:2px;height:46px}
+.bars i{flex:1;max-width:6px;min-width:2px;height:100%;border-radius:3px;background:var(--c);opacity:.35;transform:scaleY(.07);
+  transition:transform .55s cubic-bezier(.2,.9,.3,1.2) calc(var(--k)*7ms),opacity .15s linear}
+.lane.on .bars i{transform:scaleY(var(--h,.12));opacity:.9}
+/* once the playhead is moving or parked mid-clip, bars it has passed are bright and the rest dim */
+.lanes.armed .lane.on .bars i{opacity:.32}
+.lanes.armed .lane.on .bars i.lit{opacity:1}
+.ph-track{position:absolute;top:-4px;bottom:-4px;left:calc(var(--lw) + var(--lg));right:0;pointer-events:none}
+.ph{position:absolute;top:0;bottom:0;left:calc(var(--p,0)*100%);width:2px;margin-left:-1px;border-radius:1px;background:var(--ink);box-shadow:0 0 10px rgba(255,255,255,.55);opacity:0;transition:opacity .2s}
+.lanes.armed .ph{opacity:.9}
+.seekrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.seekrow .muted{font-variant-numeric:tabular-nums}
+.mini{min-height:38px;padding:0 16px;font-size:.85rem;border-radius:12px}
+.bandstage.win{border-color:rgba(62,230,168,.7);box-shadow:0 0 50px rgba(62,230,168,.2)}
+.bandstage.win .lane.on .bars i{background:var(--mint)}
+@media (max-width:430px){.lanes{--lw:54px;--lg:8px}}
+
+/* small game logos on the picker tiles: Songless = record, Bandle = four lane bars */
+.t-head{display:flex;align-items:center;gap:10px}
+.glogo{display:inline-block;width:30px;height:30px;flex:none}
+.glogo.disc{border-radius:50%;background:radial-gradient(circle,#6d83ff 0 22%,#0b0f16 25%);box-shadow:0 0 0 2px #26303f,0 0 14px rgba(109,131,255,.4)}
+
+/* "Guess the Song" brand mark (game picker only): a music note, so it differs from the Songless record and the Bandle bars */
+.brand{display:none;width:26px;height:26px;flex:none;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--violet));box-shadow:0 0 18px rgba(109,131,255,.45)}
+.brand svg{display:block;width:100%;height:100%}
+body.at-hub .logo .dot{display:none}
+body.at-hub .logo .brand{display:block}
+.brand.big{display:block;width:88px;height:88px;border-radius:26px;box-shadow:0 0 40px rgba(109,131,255,.4)}
+
+.ttab{padding:0 4px;font-size:.84rem}
+#tierBox{display:flex;flex-direction:column;gap:8px}
+/* Daily difficulty bar */
+.diffbar{display:flex;flex-direction:column;gap:6px}
+.d-names,.d-cells{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.d-names{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.d-names span{color:var(--muted);transition:color .3s}
+.d-names span:nth-child(1),.d-names span:nth-child(2){grid-column:span 2}
+.d-names .d-easy.cur{color:var(--mint)}.d-names .d-med.cur{color:#ffc857}.d-names .d-exp.cur{color:var(--red)}
+.d-cells i{height:8px;border-radius:5px;background:rgba(255,255,255,.1);transition:background .4s,box-shadow .4s,opacity .4s}
+.d-cells .d-easy{--dc:var(--mint)}.d-cells .d-med{--dc:#ffc857}.d-cells .d-exp{--dc:var(--red)}
+.d-cells i.done{background:var(--dc);opacity:.55}
+.d-cells i.cur{background:var(--dc);box-shadow:0 0 12px var(--dc)}
